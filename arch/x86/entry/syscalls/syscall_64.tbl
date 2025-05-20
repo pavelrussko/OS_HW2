@@ -341,6 +341,7 @@
 332	common	statx			sys_statx
 333 common  hello           sys_hello
 334 common  set_sec         sys_set_sec
+336 common  check_sec       sys_check_sec
 
 #
 # x32-specific system call numbers start at 512 to avoid cache impact

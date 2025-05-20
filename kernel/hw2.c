@@ -1,13 +1,10 @@
-#include <linux/errno.h>
-#include <linux/irqflags.h>
-
 #include <linux/kernel.h>
-#include <linux/uidgid.h>
-#include <linux/cred.h>
 #include <linux/sched.h>
-#include <linux/sched/task.h>
-#include <linux/syscalls.h>
-#include <linux/pid.h>
+#include <linux/module.h>
+#include <linux/list.h>
+#include <linux/cred.h>     // for current_euid()
+#include <linux/uidgid.h>
+#include <linux/rcupdate.h>
 
 
 enum Clearance {
@@ -20,6 +17,22 @@ enum Clearance {
 
 int to_bool(int a) {
     return a > 0 ? 1 : 0;
+}
+
+int char_to_clr(char c) {
+    if (c == 's') {
+        return SWORD;
+    } else if (c == 'm') {
+        return MIDNIGHT;
+    } else if (c == 'c') {
+        return CLAMP;
+    } else if (c == 'd') {
+        return DUTY;
+    } else if (c == 'i') {
+        return ISOLATE;
+    } else {
+        return -1;
+    }
 }
 
 asmlinkage long sys_hello(void) {
@@ -45,5 +58,26 @@ asmlinkage long sys_set_sec(int sword, int midnight, int clamp, int duty, int is
     current->clearance_flags |= to_bool(isolate) * ISOLATE;
 
     return 0;
+}
 
+long sys_check_sec(pid_t pid, char clr) {
+        int clearance = char_to_clr(clr);
+        // Check correctness of the input
+        if (clearance == -1) {
+            return -EINVAL;
+        }
+        // Check whether process with given pid exists
+        rcu_read_lock();
+        pcb = find_task_by_vpid(pid);
+        if (!pcb) {
+            rcu_read_unlock();
+            return -ESRCH;
+        }
+        int result = (pcb->clearance_flags & clearance) ? 1 : 0;
+        rcu_read_unlock();
+        // Check whether calling process has specified clearance
+        if(!(current->clearance_flags & clearance)) {
+            return -EPERM;
+        }
+        return result;
 }
