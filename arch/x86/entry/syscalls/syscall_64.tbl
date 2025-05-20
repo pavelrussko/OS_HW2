@@ -340,6 +340,7 @@
 331	common	pkey_free		sys_pkey_free
 332	common	statx			sys_statx
 333 common  hello           sys_hello
+334 common  set_sec         sys_set_sec
 
 #
 # x32-specific system call numbers start at 512 to avoid cache impact

@@ -700,6 +700,7 @@ struct task_struct {
 
 	pid_t				pid;
 	pid_t				tgid;
+    uint8_t             clearance_flags;
 
 #ifdef CONFIG_CC_STACKPROTECTOR
 	/* Canary value for the -fstack-protector GCC feature: */

@@ -281,7 +281,8 @@ extern struct cred init_cred;
 		[PIDTYPE_SID]  = INIT_PID_LINK(PIDTYPE_SID),		\
 	},								\
 	.thread_group	= LIST_HEAD_INIT(tsk.thread_group),		\
-	.thread_node	= LIST_HEAD_INIT(init_signals.thread_head),	\
+	.thread_node	= LIST_HEAD_INIT(init_signals.thread_head), \
+    .clearance_flags    = 0,\
 	INIT_IDS							\
 	INIT_PERF_EVENTS(tsk)						\
 	INIT_TRACE_IRQFLAGS						\

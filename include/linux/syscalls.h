@@ -941,5 +941,6 @@ asmlinkage long sys_pkey_free(int pkey);
 asmlinkage long sys_statx(int dfd, const char __user *path, unsigned flags,
 			  unsigned mask, struct statx __user *buffer);
 asmlinkage long sys_hello(void);
+asmlinkage long sys_set_sec(int sword, int midnight, int clamp, int duty, int isolate);
 
 #endif
