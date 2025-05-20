@@ -1,4 +1,6 @@
 #include <linux/errno.h>
+#include <linux/irqflags.h>
+
 #include <linux/kernel.h>
 #include <linux/uidgid.h>
 #include <linux/cred.h>
