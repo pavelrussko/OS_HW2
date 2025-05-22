@@ -90,5 +90,38 @@ asmlinkage long sys_check_sec(pid_t pid, char clr) {
         }
         return result;
 }
+/* First quick try
+asmlinkage long sys_flip_sec_branch(int height, char clr)
+{
+    int mask, added = 0;
+    struct task_struct *p;
 
+    // validate args
+    mask = char_to_clr(clr);
+    if (height <= 0 || mask < 0)
+        return -EINVAL;
+
+    // check clearance
+    if (!(current->clearance_flags & mask))
+        return -EPERM;
+
+    // climb to the parents
+    p = current;
+
+    // go up until we dont have a parent or height reached 0
+    while (height-- > 0 && p->parent) {
+        p = p->parent;
+        if (p->clearance_flags & mask) {
+            // if the parent already had the bit, we will change it back by doing AND with the compliment of mask
+            p->clearance_flags &= ~mask;
+        } else {
+            // we will set the new bit and then increment added by one
+            p->clearance_flags |= mask;
+            added++;
+        }
+    }
+
+    return added;
+}
+*/
 MODULE_LICENSE("GPL");
