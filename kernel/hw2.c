@@ -5,6 +5,7 @@
 #include <linux/cred.h>     // for current_euid()
 #include <linux/uidgid.h>
 #include <linux/rcupdate.h>
+#include <linux/errno.h> // for EINVAL EPERM ERSCH
 
 
 enum Clearance {
@@ -19,19 +20,15 @@ int to_bool(int a) {
     return a > 0 ? 1 : 0;
 }
 
-int char_to_clr(char c) {
-    if (c == 's') {
-        return SWORD;
-    } else if (c == 'm') {
-        return MIDNIGHT;
-    } else if (c == 'c') {
-        return CLAMP;
-    } else if (c == 'd') {
-        return DUTY;
-    } else if (c == 'i') {
-        return ISOLATE;
-    } else {
-        return -1;
+static int char_to_clr(char c)
+{
+    switch (c) {
+    case 's': return SWORD;
+    case 'm': return MIDNIGHT;
+    case 'c': return CLAMP;
+    case 'd': return DUTY;
+    case 'i': return ISOLATE;
+    default:  return -1;
     }
 }
 
@@ -60,8 +57,19 @@ asmlinkage long sys_set_sec(int sword, int midnight, int clamp, int duty, int is
     return 0;
 }
 
-long sys_check_sec(pid_t pid, char clr) {
+asmlinkage long sys_get_sec(char clr)
+{
+    int clearance = char_to_clr(clr);
+
+    if (clearance < 0)
+        return -EINVAL;
+
+    return !!(current->clearance_flags & clearance);
+}     
+
+asmlinkage long sys_check_sec(pid_t pid, char clr) {
         int clearance = char_to_clr(clr);
+        struct task_struct *pcb;
         // Check correctness of the input
         if (clearance == -1) {
             return -EINVAL;
@@ -75,9 +83,12 @@ long sys_check_sec(pid_t pid, char clr) {
         }
         int result = (pcb->clearance_flags & clearance) ? 1 : 0;
         rcu_read_unlock();
+        
         // Check whether calling process has specified clearance
         if(!(current->clearance_flags & clearance)) {
             return -EPERM;
         }
         return result;
 }
+
+MODULE_LICENSE("GPL");
