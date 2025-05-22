@@ -343,6 +343,7 @@
 334 common  set_sec         sys_set_sec
 335 common  get_sec         sys_get_sec
 336 common  check_sec       sys_check_sec
+337 common  flip_sec_branch sys_flip_sec_branch
 
 #
 # x32-specific system call numbers start at 512 to avoid cache impact
