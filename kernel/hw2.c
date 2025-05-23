@@ -56,12 +56,16 @@ asmlinkage long sys_set_sec(int sword, int midnight, int clamp, int duty, int is
     current->clearance_flags |= to_bool(clamp) * CLAMP;
     current->clearance_flags |= to_bool(duty) * DUTY;
     current->clearance_flags |= to_bool(isolate) * ISOLATE;
+    printk("logging: set_sec pid: %d\n", current->pid);
+    printk("logging: pcb after set_sec: %d, should be %d, %d, %d, %d, %d\n", current->clearance_flags, sword, midnight, clamp, duty, isolate);
 
     return 0;
 }
 
-long sys_check_sec(pid_t pid, char clr) {
-        int clearance = char_to_clr(clr);
+asmlinkage long sys_check_sec(pid_t pid, char clr) {
+	struct task_struct* pcb;
+	int clearance = char_to_clr(clr);
+    int result = 0;
         // Check correctness of the input
         if (clearance == -1) {
             return -EINVAL;
@@ -73,11 +77,45 @@ long sys_check_sec(pid_t pid, char clr) {
             rcu_read_unlock();
             return -ESRCH;
         }
-        int result = (pcb->clearance_flags & clearance) ? 1 : 0;
-        rcu_read_unlock();
-        // Check whether calling process has specified clearance
-        if(!(current->clearance_flags & clearance)) {
-            return -EPERM;
+    printk("logging: set_sec called by PID %d, flags set to: %d\n", current->pid, current->clearance_flags);
+    printk("logging: pid of found process: %d, should be: %d\n", pcb->pid, pid);
+    printk("logging: clearance flag of pcb: %d\n", pcb->clearance_flags);
+    printk("logging: clearance got: %d\n", clearance);
+    //result = (pcb->clearance_flags & clearance) ? 1 : 0;
+    if (pcb->clearance_flags & clearance) {
+        result = 1;
+    }
+    rcu_read_unlock();
+    // Check whether calling process has specified clearance
+    if(!(current->clearance_flags & clearance)) {
+        return -EPERM;
+    }
+    return result;
+}
+
+asmlinkage long sys_flip_sec_branch(int height, char clr) {
+    struct task_struct* task;
+    int clearance = char_to_clr(clr);
+    int gained_count = 0;
+    // Check correctness of the input
+    if (height <= 0 || clearance == -1) {
+        return -EINVAL;
+    }
+    // Check permission
+    task = current;
+    if (!(current->clearance_flags & clearance)) {
+        return -EPERM;
+    }
+    while (height-- > 0) {
+        task = task->real_parent;
+        if (!(task->clearance_flags & clearance)) {
+            gained_count++;
         }
-        return result;
+        task->clearance_flags ^= clearance;
+        // Check whether at init process
+        if (task->pid == 1){
+            break;
+        }
+    }
+    return gained_count;
 }

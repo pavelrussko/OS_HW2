@@ -943,5 +943,5 @@ asmlinkage long sys_statx(int dfd, const char __user *path, unsigned flags,
 asmlinkage long sys_hello(void);
 asmlinkage long sys_set_sec(int sword, int midnight, int clamp, int duty, int isolate);
 asmlinkage long sys_check_sec(pid_t pid, char clr);
-
+asmlinkage long sys_flip_sec_branch(int height, char clr);
 #endif
