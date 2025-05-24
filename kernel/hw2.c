@@ -5,6 +5,7 @@
 #include <linux/cred.h>     // for current_euid()
 #include <linux/uidgid.h>
 #include <linux/rcupdate.h>
+#include <linux/errno.h> // for EINVAL EPERM ERSCH
 
 
 enum Clearance {
@@ -19,19 +20,15 @@ int to_bool(int a) {
     return a > 0 ? 1 : 0;
 }
 
-int char_to_clr(char c) {
-    if (c == 's') {
-        return SWORD;
-    } else if (c == 'm') {
-        return MIDNIGHT;
-    } else if (c == 'c') {
-        return CLAMP;
-    } else if (c == 'd') {
-        return DUTY;
-    } else if (c == 'i') {
-        return ISOLATE;
-    } else {
-        return -1;
+static int char_to_clr(char c)
+{
+    switch (c) {
+    case 's': return SWORD;
+    case 'm': return MIDNIGHT;
+    case 'c': return CLAMP;
+    case 'd': return DUTY;
+    case 'i': return ISOLATE;
+    default:  return -1;
     }
 }
 
@@ -61,6 +58,17 @@ asmlinkage long sys_set_sec(int sword, int midnight, int clamp, int duty, int is
 
     return 0;
 }
+
+asmlinkage long sys_get_sec(char clr)
+{
+    int clearance = char_to_clr(clr);
+
+    if (clearance < 0)
+        return -EINVAL;
+
+    return !!(current->clearance_flags & clearance);
+}
+
 
 asmlinkage long sys_check_sec(pid_t pid, char clr) {
 	struct task_struct* pcb;
@@ -92,6 +100,41 @@ asmlinkage long sys_check_sec(pid_t pid, char clr) {
     }
     return result;
 }
+/* First quick try
+asmlinkage long sys_flip_sec_branch(int height, char clr)
+{
+    int mask, added = 0;
+    struct task_struct *p;
+
+    // validate args
+    mask = char_to_clr(clr);
+    if (height <= 0 || mask < 0)
+        return -EINVAL;
+
+    // check clearance
+    if (!(current->clearance_flags & mask))
+        return -EPERM;
+
+    // climb to the parents
+    p = current;
+
+    // go up until we dont have a parent or height reached 0
+    while (height-- > 0 && p->parent) {
+        p = p->parent;
+        if (p->clearance_flags & mask) {
+            // if the parent already had the bit, we will change it back by doing AND with the compliment of mask
+            p->clearance_flags &= ~mask;
+        } else {
+            // we will set the new bit and then increment added by one
+            p->clearance_flags |= mask;
+            added++;
+        }
+    }
+
+    return added;
+}
+*/
+MODULE_LICENSE("GPL");
 
 asmlinkage long sys_flip_sec_branch(int height, char clr) {
     struct task_struct* task;
