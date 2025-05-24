@@ -134,7 +134,6 @@ asmlinkage long sys_flip_sec_branch(int height, char clr)
     return added;
 }
 */
-MODULE_LICENSE("GPL");
 
 asmlinkage long sys_flip_sec_branch(int height, char clr) {
     struct task_struct* task;
@@ -162,3 +161,5 @@ asmlinkage long sys_flip_sec_branch(int height, char clr) {
     }
     return gained_count;
 }
+
+MODULE_LICENSE("GPL");
